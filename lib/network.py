@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 ##########################################################################
 ########                        TASK 1                            ########
@@ -15,10 +16,12 @@ class MLP(nn.Module):
             n_out: dimensionality of output space
         """
         super().__init__()
-        pass
+        self.linear1 = nn.Linear(n_input, n_hidden)
+        self.linear2 = nn.Linear(n_hidden, n_out)
 
     def forward(self, x):
-        return x
+        return self.linear2(F.tanh(self.linear1(x)))
+    
 ##########################################################################
 ########                        TASK 1                            ########
 ##########################################################################
@@ -82,6 +85,3 @@ class NatureCNN(nn.Module):
         x = self.feature_extractor(x)
         x = self.head(x)
         return x
-
-
-

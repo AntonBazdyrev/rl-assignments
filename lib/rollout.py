@@ -12,8 +12,9 @@ class ReplayBuffer(object):
         Arguments:
             capacity: Max number of elements in buffer
         """
-        pass
-
+        self.capacity = capacity
+        self.buffer = []
+        
     def push(self, s0, a, s1, r, d):
         """Push an element to the buffer.
 
@@ -27,15 +28,17 @@ class ReplayBuffer(object):
         If the buffer is full, start to rewrite elements
         starting from the oldest ones.
         """
-        pass
+        if len(self.buffer) > self.capacity:
+            self.buffer.pop(0)
+        self.buffer.append((s0, a, s1, r, d))
 
     def sample(self, batch_size):
         """Return `batch_size` randomly chosen elements."""
-        pass
+        return random.sample(self.buffer, batch_size)
 
     def __len__(self):
         """Return size of the buffer."""
-        pass
+        return len(self.buffer)
 
 ##########################################################################
 ########                        TASK 0                            ########

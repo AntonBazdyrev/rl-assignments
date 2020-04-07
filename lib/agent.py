@@ -5,6 +5,7 @@ import random
 from gym.spaces import Discrete
 import numpy as np
 import torch
+import torch.nn as nn
 
 
 def polyak_update(target, source, tau):
@@ -43,7 +44,6 @@ class DQN(object):
             polyak_tau (float): softness of target network updates.
                 1.0 - hard copy of weights. 0.0 - no copying at all.
             cuda (bool): whether to use Cuda.
-
         """
         self.value_network = value_network
         self.target_network = copy.deepcopy(value_network)
@@ -68,9 +68,9 @@ class DQN(object):
         ########                        TASK 2                            ########
         ##########################################################################
         # Define a loss (Huber loss is preferred) and Adam optimizer:            #
-        self.criterion = None
+        self.criterion = nn.SmoothL1Loss()
 
-        self.optimizer = None
+        self.optimizer = torch.optim.Adam(params=self.value_network.parameters(), lr=learning_rate)
         ##########################################################################
         ########                        TASK 2                            ########
         ##########################################################################
@@ -104,21 +104,25 @@ class DQN(object):
         ##########################################################################
         #   Here, you should implement the estimation of y_hat - predicted Q     #
         # value and y - target, i.e. the right-hand side of Bellman equation     #
+        y_hat = self.value_network(v_s0).gather(1, v_a.unsqueeze(1))
+        y = self.target_network(v_s1)
 
         if not self.double:
-            pass
+            y = (y.max(1)[0] * self.discount_factor * (1 - v_d) + v_r).unsqueeze(1)
         else:
             ##########################################################################
             ########                        TASK 4                            ########
             ##########################################################################
             # Double DQN estimation                                                  #
-            pass
+            value_argmax = self.value_network(v_s1).argmax(1)
+            y = y.gather(1, value_argmax.unsqueeze(1))
+            y = y * self.discount_factor * (1 - v_d.unsqueeze(1)) + v_r.unsqueeze(1)
             ##########################################################################
             ########                        TASK 4                            ########
             ##########################################################################
 
-        y = None
-        y_hat = None
+            
+            
         ##########################################################################
         ########                        TASK 2                            ########
         ##########################################################################
@@ -142,7 +146,14 @@ class DQN(object):
         ##########################################################################
         # Implement epsilon-greedy policy using value_network. Also, you will    #
         # need to pick greedy actions if `force_greedy` is True                  #
-        return None
+
+        randompolicy = bool(np.random.binomial(n=1, p=self.eps)) and not force_greedy
+
+        if randompolicy:
+            action = self.action_space.sample()
+        else:
+            action = self.value_network(s).argmax(1).item()
+        return action
         ##########################################################################
         ########                        TASK 2                            ########
         ##########################################################################
